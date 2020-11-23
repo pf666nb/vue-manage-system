@@ -3,7 +3,7 @@
         <div class="crumbs">
             <el-breadcrumb separator="/">
                 <el-breadcrumb-item>
-                    <i class="el-icon-lx-cascades"></i> 基础表格
+                    <i class="el-icon-lx-cascades"></i> 审核列表
                 </el-breadcrumb-item>
             </el-breadcrumb>
         </div>
@@ -15,14 +15,15 @@
                     class="handle-del mr10"
                     @click="delAllSelection"
                 >批量删除</el-button>
-                <el-select v-model="query.address" placeholder="地址" class="handle-select mr10">
-                    <el-option key="1" label="广东省" value="广东省"></el-option>
-                    <el-option key="2" label="湖南省" value="湖南省"></el-option>
+                <el-select v-model="query.address" placeholder="类别" class="handle-select mr10">
+                    <el-option key="1" label="已审核" value="已审核"></el-option>
+                    <el-option key="2" label="待审核" value="待审核"></el-option>
                 </el-select>
-                <el-input v-model="query.name" placeholder="用户名" class="handle-input mr10"></el-input>
+                <el-input v-model="query.name" placeholder="物品名称" class="handle-input mr10"></el-input>
                 <el-button type="primary" icon="el-icon-search" @click="handleSearch">搜索</el-button>
             </div>
             <el-table
+                v-loading="loading"
                 :data="tableData"
                 border
                 class="table"
@@ -31,43 +32,45 @@
                 @selection-change="handleSelectionChange"
             >
                 <el-table-column type="selection" width="55" align="center"></el-table-column>
-                <el-table-column prop="id" label="ID" width="55" align="center"></el-table-column>
-                <el-table-column prop="name" label="用户名"></el-table-column>
-                <el-table-column label="账户余额">
-                    <template slot-scope="scope">￥{{scope.row.money}}</template>
+                <el-table-column prop="id" label="物品ID" width="70" align="center"></el-table-column>
+                <el-table-column prop="goodsName" label="物品名字"></el-table-column>
+                <el-table-column label="物品价格">
+                    <template slot-scope="scope">￥{{scope.row.newPrice}}</template>
                 </el-table-column>
-                <el-table-column label="头像(查看大图)" align="center">
+                <el-table-column label="物品封面(查看大图)" align="center">
                     <template slot-scope="scope">
                         <el-image
                             class="table-td-thumb"
-                            :src="scope.row.thumb"
-                            :preview-src-list="[scope.row.thumb]"
+                            :src="scope.row.imageUrl"
+                            :preview-src-list="[scope.row.imageUrl]"
                         ></el-image>
                     </template>
                 </el-table-column>
-                <el-table-column prop="address" label="地址"></el-table-column>
-                <el-table-column label="状态" align="center">
+                <el-table-column prop="authorName" label="用户昵称"></el-table-column>
+                <el-table-column label="物品状态" align="center">
                     <template slot-scope="scope">
                         <el-tag
-                            :type="scope.row.state==='成功'?'success':(scope.row.state==='失败'?'danger':'')"
-                        >{{scope.row.state}}</el-tag>
+                            :type="scope.row.goodStatus===1?'success':(scope.row.goodStatus===0?'danger':'')"
+                        >{{scope.row.goodStatus===1?"上架":"待审核"}}</el-tag>
                     </template>
                 </el-table-column>
 
-                <el-table-column prop="date" label="注册时间"></el-table-column>
+                <el-table-column prop="createTime" label="发布时间"></el-table-column>
                 <el-table-column label="操作" width="180" align="center">
                     <template slot-scope="scope">
                         <el-button
                             type="text"
-                            icon="el-icon-edit"
+                            class=""
+                            icon="el-icon-circle-check"
+                            :class="[scope.row.goodStatus===1?'red':'green']"
                             @click="handleEdit(scope.$index, scope.row)"
-                        >编辑</el-button>
-                        <el-button
+                        >{{scope.row.goodStatus===1?"下架":"上架"}}</el-button>
+                        <!-- <el-button
                             type="text"
                             icon="el-icon-delete"
                             class="red"
                             @click="handleDelete(scope.$index, scope.row)"
-                        >删除</el-button>
+                        >删除物品</el-button> -->
                     </template>
                 </el-table-column>
             </el-table>
@@ -98,11 +101,12 @@
                 <el-button type="primary" @click="saveEdit">确 定</el-button>
             </span>
         </el-dialog>
-    </div>
+    </div>  
 </template>
 
 <script>
-import { fetchData } from '../../api/index';
+import { fetchData,getGoodsData } from '../../api/index';
+import { updateGoods } from '../../api/goods.js';
 export default {
     name: 'basetable',
     data() {
@@ -111,8 +115,9 @@ export default {
                 address: '',
                 name: '',
                 pageIndex: 1,
-                pageSize: 10
+                pageSize: 5
             },
+            loading: true,
             tableData: [],
             multipleSelection: [],
             delList: [],
@@ -129,11 +134,21 @@ export default {
     methods: {
         // 获取 easy-mock 的模拟数据
         getData() {
-            fetchData(this.query).then(res => {
-                console.log(res);
-                this.tableData = res.list;
-                this.pageTotal = res.pageTotal || 50;
-            });
+            
+            getGoodsData(this.query.pageIndex,this.query.pageSize).then(res =>{
+
+                console.log(res)
+                this.tableData = res.goodList
+                this.pageTotal = res.pageTotal
+                this.loading = false
+                
+
+            })
+            // fetchData(this.query).then(res => {
+            //     console.log(res);
+            //     this.tableData = res.list;
+            //     this.pageTotal = res.pageTotal || 50;
+            // });
         },
         // 触发搜索按钮
         handleSearch() {
@@ -168,9 +183,38 @@ export default {
         },
         // 编辑操作
         handleEdit(index, row) {
-            this.idx = index;
-            this.form = row;
-            this.editVisible = true;
+             this.$confirm('确定要执行此操作吗？', '提示', {
+                type: 'warning'
+            })
+                .then(() => {
+                    if(row.goodStatus===1){
+                        row.goodStatus = 0
+                    }else{
+                        row.goodStatus = 1
+                    }
+                    this.loading=true;
+                    console.log(row)
+                    let that = this
+                    updateGoods(row.id,row.goodStatus).then(
+                        res =>{
+                           this.loading=false;
+                            if(res.code===200){
+                             
+                             that.$message.success('修改成功');
+                            }else{
+                             that.$message.error('修改失败')
+                            }
+                             
+                        }
+                    )
+
+                   
+        
+                })
+                .catch(() => {});
+            // this.idx = index;
+            // this.form = row;
+            // this.editVisible = true;
         },
         // 保存编辑
         saveEdit() {
@@ -207,6 +251,9 @@ export default {
 .red {
     color: #ff0000;
 }
+.green {
+    color: green;
+}
 .mr10 {
     margin-right: 10px;
 }
@@ -215,5 +262,11 @@ export default {
     margin: auto;
     width: 40px;
     height: 40px;
+}
+.table-td-thumb[data-v-31c7c926] {
+    display: block;
+    margin: auto;
+    width: 80px;
+    height: 130px;
 }
 </style>
