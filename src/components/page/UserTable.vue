@@ -46,7 +46,7 @@
                         ></el-image>
                     </template>
                 </el-table-column>
-                <el-table-column prop="limt" label="用户上传物品数量限制"></el-table-column>
+                <el-table-column prop="limt"  label="用户上传物品数量限制"></el-table-column>
                 <el-table-column label="用户状态" align="center">
                     <template slot-scope="scope">
                         <el-tag
@@ -156,7 +156,7 @@ export default {
         // 修改用户状态
         handleDelete(index, row) {
             // 二次确认修改
-            console.log(row)
+           
         
             this.$confirm('确定要修改用户状态吗？危险操作', '提示', {
                 type: 'warning'
@@ -170,8 +170,12 @@ export default {
                     }
                     EditUser(row).then(
                         res=>{
-                            console.log(this)
+                            
+                            if(res.code===200){
                             this.$message.success('修改成功');
+                            }else{
+                            this.$message.error('修改失败');
+                            }
                         }
                     )
                 })

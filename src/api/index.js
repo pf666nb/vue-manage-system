@@ -26,6 +26,20 @@ export const postNotice = (form)=>{
     })
 
 }
+export const queryGoodsData = (query) =>{
+    console.log(query)
+    return request({
+        url: '/admin/queryGoodsData',
+        method: 'post',
+        data:{
+            pageIndex:query.pageIndex,
+            pageSize:query.pageSize,
+            goodStatus:query.goodStatus,
+            goodsName:query.goodsName
+            
+        }
+    })
+}
 
 export const getGoodsData = (pageIndex,pageSize) =>{
     return request({

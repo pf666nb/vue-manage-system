@@ -15,12 +15,12 @@
                     class="handle-del mr10"
                     @click="delAllSelection"
                 >批量删除</el-button>
-                <el-select v-model="query.address" placeholder="类别" class="handle-select mr10">
-                    <el-option key="1" label="已审核" value="已审核"></el-option>
-                    <el-option key="2" label="待审核" value="待审核"></el-option>
+                <el-select v-model="query.goodStatus" placeholder="类别" class="handle-select mr10">
+                    <el-option key="1" label="已审核" value="1"></el-option>
+                    <el-option key="0" label="待审核" value="0"></el-option>
                 </el-select>
-                <el-input v-model="query.name" placeholder="物品名称" class="handle-input mr10"></el-input>
-                <el-button type="primary" icon="el-icon-search" @click="handleSearch">搜索</el-button>
+                <el-input v-model="query.goodsName" placeholder="物品名称" class="handle-input mr10"></el-input>
+                <el-button type="primary" icon="el-icon-search" @click="queryData">搜索</el-button>
             </div>
             <el-table
                 v-loading="loading"
@@ -34,6 +34,7 @@
                 <el-table-column type="selection" width="55" align="center"></el-table-column>
                 <el-table-column prop="id" label="物品ID" width="70" align="center"></el-table-column>
                 <el-table-column prop="goodsName" label="物品名字"></el-table-column>
+                <el-table-column prop="goodsDesc" label="物品简介"></el-table-column>
                 <el-table-column label="物品价格">
                     <template slot-scope="scope">￥{{scope.row.newPrice}}</template>
                 </el-table-column>
@@ -105,15 +106,15 @@
 </template>
 
 <script>
-import { fetchData,getGoodsData } from '../../api/index';
+import { fetchData,getGoodsData,queryGoodsData } from '../../api/index';
 import { updateGoods } from '../../api/goods.js';
 export default {
     name: 'basetable',
     data() {
         return {
             query: {
-                address: '',
-                name: '',
+                goodStatus: '',
+                goodsName: '',
                 pageIndex: 1,
                 pageSize: 5
             },
@@ -132,6 +133,20 @@ export default {
         this.getData();
     },
     methods: {
+
+        queryData(){
+            this.loading = true
+            queryGoodsData(this.query).then(res=>{
+                if(res.goodList!=null){
+                this.tableData = res.goodList
+                this.pageTotal = res.pageTotal
+                this.loading = false
+                }else{
+                that.$message.error('获取数据失败')
+                }
+            })
+
+        },
         // 获取 easy-mock 的模拟数据
         getData() {
             
@@ -144,11 +159,7 @@ export default {
                 
 
             })
-            // fetchData(this.query).then(res => {
-            //     console.log(res);
-            //     this.tableData = res.list;
-            //     this.pageTotal = res.pageTotal || 50;
-            // });
+           
         },
         // 触发搜索按钮
         handleSearch() {
